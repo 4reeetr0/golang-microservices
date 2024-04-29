@@ -20,6 +20,12 @@ func Register(c *fiber.Ctx) error {
 		})
 	}
 
+	if userRequest.Email == "" || userRequest.Password == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Email and password are required",
+		})
+	}
+
 	user, err := database.GetUser(userRequest.Email)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -51,6 +57,12 @@ func Login(c *fiber.Ctx) error {
 	if err := c.BodyParser(&loginRequest); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": "Invalid request",
+		})
+	}
+
+	if loginRequest.Email == "" || loginRequest.Password == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Email and password are required",
 		})
 	}
 
