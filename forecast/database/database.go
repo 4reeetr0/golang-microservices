@@ -16,7 +16,7 @@ var DB *sql.DB
 
 func Connect() {
 	var err error
-	DB, err = sql.Open("mysql", "root:rootroot@/local")
+	DB, err = sql.Open("mysql", "root:root@/local")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -95,45 +95,50 @@ func AddForecastsHourly() {
 }
 
 func GetForecastHistory() ([]models.ForecastHistoryResponse, error) {
-	rows, err := DB.Query("SELECT country, city, weather_main, weather_description, temperature, temperature_min, temperature_max, feels_like, humidity, pressure, visibility, cloudiness, wind_speed, wind_deg, rain, date, location_id FROM forecasts")
+	locations := make([]models.ForecastLocation, 0)
+
+	rows, err := DB.Query("SELECT * FROM forecast_locations")
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
 	}
 
-	var curForecast models.ForecastResponse
-	var curHistory models.ForecastHistoryResponse
-	forecasts := make([]models.ForecastResponse, 0)
-	result := make([]models.ForecastHistoryResponse, 0)
-	var curLocationId int = -1
-	var locationId int
-
 	for rows.Next() {
-		var dateUnix int
-
-		err = rows.Scan(&curForecast.Country, &curForecast.City, &curForecast.WheatherMain, &curForecast.WheatherDescription, &curForecast.Temperature, &curForecast.TemperatureMin, &curForecast.TemperatureMax, &curForecast.FeelsLike, &curForecast.Humidity, &curForecast.Pressure, &curForecast.Visibility, &curForecast.Cloudiness, &curForecast.WindSpeed, &curForecast.WindDeg, &curForecast.Rain, &dateUnix, &locationId)
+		var location models.ForecastLocation
+		err = rows.Scan(&location.Id, &location.Country, &location.City, &location.Lattitude, &location.Longitude)
 		if err != nil {
 			fmt.Println(err)
 			return nil, err
 		}
-		curForecast.Date = time.Unix(int64(dateUnix), 0)
-		fmt.Println(curForecast.Date)
-		curHistory.Country = curForecast.Country
-		curHistory.City = curForecast.City
-
-		if curLocationId != locationId {
-			if curLocationId != -1 {
-				curHistory.History = forecasts
-				result = append(result, curHistory)
-			}
-			curLocationId = locationId
-			forecasts = make([]models.ForecastResponse, 0)
-		}
-
-		forecasts = append(forecasts, curForecast)
+		locations = append(locations, location)
 	}
-
 	defer rows.Close()
 
+	result := make([]models.ForecastHistoryResponse, 0)
+	for _, location := range locations {
+		rows, err := DB.Query("SELECT country, city, weather_main, weather_description, temperature, temperature_min, temperature_max, feels_like, humidity, pressure, visibility, cloudiness, wind_speed, wind_deg, rain, date FROM forecasts WHERE location_id = ?", location.Id)
+		if err != nil {
+			fmt.Println(err)
+			return nil, err
+		}
+		forecast := make([]models.ForecastResponse, 0)
+		for rows.Next() {
+			var curForecast models.ForecastResponse
+			var dateUnix int
+			err = rows.Scan(&curForecast.Country, &curForecast.City, &curForecast.WheatherMain, &curForecast.WheatherDescription, &curForecast.Temperature, &curForecast.TemperatureMin, &curForecast.TemperatureMax, &curForecast.FeelsLike, &curForecast.Humidity, &curForecast.Pressure, &curForecast.Visibility, &curForecast.Cloudiness, &curForecast.WindSpeed, &curForecast.WindDeg, &curForecast.Rain, &dateUnix)
+			if err != nil {
+				fmt.Println(err)
+				return nil, err
+			}
+			curForecast.Date = time.Unix(int64(dateUnix), 0)
+			forecast = append(forecast, curForecast)
+		}
+		defer rows.Close()
+		result = append(result, models.ForecastHistoryResponse{
+			Country: location.Country,
+			City:    location.City,
+			History: forecast,
+		})
+	}
 	return result, nil
 }

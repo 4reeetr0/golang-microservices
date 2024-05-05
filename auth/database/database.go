@@ -11,7 +11,7 @@ var DB *sql.DB
 
 func Connect() {
 	var err error
-	DB, err = sql.Open("mysql", "root:rootroot@/local")
+	DB, err = sql.Open("mysql", "root:root@/local")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -19,7 +19,7 @@ func Connect() {
 
 func GetUser(email string) (models.User, error) {
 	var user models.User
-	err := DB.QueryRow("SELECT * FROM users WHERE email = ?", email).Scan(&user.Id, &user.Email, &user.Password)
+	err := DB.QueryRow("SELECT * FROM users WHERE email = ?", email).Scan(&user.Id, &user.Username, &user.Email, &user.Password)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return user, nil
@@ -30,6 +30,6 @@ func GetUser(email string) (models.User, error) {
 }
 
 func AddUser(user *models.RegisterRequest) error {
-	_, err := DB.Exec("INSERT INTO users (email, password) VALUES (?, ?)", user.Email, user.Password)
+	_, err := DB.Exec("INSERT INTO users (username, email, password) VALUES (?, ?, ?)", user.Username, user.Email, user.Password)
 	return err
 }
