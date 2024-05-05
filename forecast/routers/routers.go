@@ -7,7 +7,11 @@ import (
 )
 
 func Init(router *fiber.App) {
-	router.Get("/getCurrentWheather", func(c *fiber.Ctx) error {
+	router.Get("/now", func(c *fiber.Ctx) error {
 		return controllers.GetCurrentWeather(c)
+	})
+
+	router.Get("/history", func(c *fiber.Ctx) error {
+		return controllers.GetForecastHistory(c)
 	})
 }

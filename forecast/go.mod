@@ -5,6 +5,7 @@ go 1.21.6
 require github.com/gofiber/fiber v1.14.6
 
 require (
+	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/google/uuid v1.5.0 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
@@ -13,6 +14,7 @@ require (
 require (
 	github.com/andybalholm/brotli v1.0.5 // indirect
 	github.com/briandowns/openweathermap v0.19.0
+	github.com/go-sql-driver/mysql v1.8.1
 	github.com/gofiber/fiber/v2 v2.52.4
 	github.com/gofiber/utils v0.0.10 // indirect
 	github.com/gorilla/schema v1.1.0 // indirect

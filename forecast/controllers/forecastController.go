@@ -1,42 +1,45 @@
 package controllers
 
 import (
+	config "forecast-service/config"
+	database "forecast-service/database"
 	models "forecast-service/models"
+	"time"
 
 	owm "github.com/briandowns/openweathermap"
 	"github.com/gofiber/fiber/v2"
 )
 
-const API_KEY = "b25b375af8d59912cd7edf9a1911cd07"
-
 func GetCurrentWeather(c *fiber.Ctx) error {
-	var curWetherReq models.ForecastRequest
+	var curWeatherReq models.ForecastRequest
 
-	if err := c.BodyParser(&curWetherReq); err != nil {
+	if err := c.BodyParser(&curWeatherReq); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": "Invalid request",
 		})
 	}
 
-	w, err := owm.NewCurrent(curWetherReq.Units, curWetherReq.Lang, API_KEY)
+	res, err := getForecastFromRequest(&curWeatherReq)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Internal server error",
 		})
 	}
 
-	w.CurrentByCoordinates(&owm.Coordinates{Latitude: curWetherReq.Lattitude, Longitude: curWetherReq.Longitude})
-
-	wheatherResponse := getInfoFromResponse(w)
-
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message": "Weather fetched successfully",
-		"weather": wheatherResponse,
-	})
+	return c.Status(fiber.StatusOK).JSON(res)
 }
 
-func getInfoFromResponse(w *owm.CurrentWeatherData) models.ForecastResponse {
-	return models.ForecastResponse{
+func getForecastFromRequest(req *models.ForecastRequest) (models.ForecastResponse, error) {
+	var wheatherResponse models.ForecastResponse
+
+	w, err := owm.NewCurrent(req.Units, req.Lang, config.API_KEY)
+	if err != nil {
+		return wheatherResponse, err
+	}
+
+	w.CurrentByCoordinates(&owm.Coordinates{Latitude: req.Lattitude, Longitude: req.Longitude})
+
+	wheatherResponse = models.ForecastResponse{
 		Country:             w.Sys.Country,
 		City:                w.Name,
 		WheatherMain:        w.Weather[0].Main,
@@ -52,5 +55,19 @@ func getInfoFromResponse(w *owm.CurrentWeatherData) models.ForecastResponse {
 		WindSpeed:           w.Wind.Speed,
 		WindDeg:             w.Wind.Deg,
 		Rain:                w.Rain.OneH,
+		Date:                time.Unix(int64(w.Dt), 0),
 	}
+
+	return wheatherResponse, nil
+}
+
+func GetForecastHistory(c *fiber.Ctx) error {
+	res, err := database.GetForecastHistory()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Internal server error",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(res)
 }
