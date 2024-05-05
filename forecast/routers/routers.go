@@ -7,7 +7,7 @@ import (
 )
 
 func Init(router *fiber.App) {
-	router.Get("/now", func(c *fiber.Ctx) error {
+	router.Post("/now", func(c *fiber.Ctx) error {
 		return controllers.GetCurrentWeather(c)
 	})
 

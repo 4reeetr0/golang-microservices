@@ -3,6 +3,9 @@ package routers
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
+	config "gateaway-service/config"
+	models "gateaway-service/models"
 	"io/ioutil"
 	"net/http"
 
@@ -10,11 +13,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-var authService string = "http://localhost:3001"
-
-type AuthResponse struct {
-	Token string `json:"access_token"`
-}
+const authService string = "http://localhost:3001"
+const forecastService string = "http://localhost:3002"
 
 func Init(router *fiber.App) {
 	publicGroup := router.Group("/api/auth")
@@ -26,7 +26,7 @@ func Init(router *fiber.App) {
 			return c.Status(500).SendString(err.Error())
 		}
 
-		var authResponse AuthResponse
+		var authResponse models.AuthResponse
 		body, err = ioutil.ReadAll(response.Body)
 		if err != nil {
 			return c.SendStatus(fiber.StatusInternalServerError)
@@ -56,14 +56,58 @@ func Init(router *fiber.App) {
 		return c.Status(fiber.StatusOK).SendString("User registered")
 	})
 
-	authGroup := router.Group("/auth")
+	authGroup := router.Group("/api/forecast")
 	authGroup.Use(jwtware.New(jwtware.Config{
 		SigningKey: jwtware.SigningKey{
-			Key: []byte("e1a924cda66b8c86f00da9f9da733051d802253fc903ffb3ea106c71e5d5f6c6"),
+			Key: config.JWT_SECRET,
 		},
 	}))
 
-	authGroup.Get("/", func(c *fiber.Ctx) error {
-		return c.SendString("Hello, World!")
+	authGroup.Get("/now", func(c *fiber.Ctx) error {
+		body := c.Body()
+
+		response, err := http.Post(forecastService+"/now", "application/json", bytes.NewBuffer(body))
+		if err != nil {
+			fmt.Println(err)
+			return c.Status(500).SendString(err.Error())
+		}
+
+		var forecastResponse models.ForecastResponse
+		body, err = ioutil.ReadAll(response.Body)
+		if err != nil {
+			return c.SendStatus(fiber.StatusInternalServerError)
+		}
+		defer response.Body.Close()
+		err = json.Unmarshal(body, &forecastResponse)
+		if err != nil {
+			return c.SendStatus(fiber.StatusInternalServerError)
+		}
+
+		return c.Status(fiber.StatusOK).JSON(forecastResponse)
+	})
+
+	authGroup.Get("/history", func(c *fiber.Ctx) error {
+		var body []byte
+
+		response, err := http.Get(forecastService + "/history")
+		if err != nil {
+			fmt.Println(err)
+			return c.Status(500).SendString(err.Error())
+		}
+
+		var forecastResponse []models.ForecastHistoryResponse
+		body, err = ioutil.ReadAll(response.Body)
+		if err != nil {
+			fmt.Println(err)
+			return c.SendStatus(fiber.StatusInternalServerError)
+		}
+		defer response.Body.Close()
+		err = json.Unmarshal(body, &forecastResponse)
+		if err != nil {
+			fmt.Println(err)
+			return c.SendStatus(fiber.StatusInternalServerError)
+		}
+
+		return c.Status(fiber.StatusOK).JSON(forecastResponse)
 	})
 }

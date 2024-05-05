@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	config "auth-service/config"
 	database "auth-service/database"
 	models "auth-service/models"
 	"time"
@@ -8,8 +9,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 )
-
-var JWT_SECRET = []byte("e1a924cda66b8c86f00da9f9da733051d802253fc903ffb3ea106c71e5d5f6c6")
 
 func Register(c *fiber.Ctx) error {
 	var userRequest models.RegisterRequest
@@ -92,7 +91,7 @@ func Login(c *fiber.Ctx) error {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, payload)
 
-	t, err := token.SignedString(JWT_SECRET)
+	t, err := token.SignedString(config.JWT_SECRET)
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{

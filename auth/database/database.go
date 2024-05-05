@@ -11,7 +11,7 @@ var DB *sql.DB
 
 func Connect() {
 	var err error
-	DB, err = sql.Open("mysql", "root:root@/local")
+	DB, err = sql.Open("mysql", "root:rootroot@/local")
 	if err != nil {
 		panic(err.Error())
 	}
