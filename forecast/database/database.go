@@ -90,8 +90,6 @@ func AddForecastsHourly() {
 			addForecast()
 		}
 	}()
-
-	select {}
 }
 
 func GetForecastHistory() ([]models.ForecastHistoryResponse, error) {
