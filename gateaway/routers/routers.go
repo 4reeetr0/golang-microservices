@@ -13,17 +13,18 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-const authService string = "http://localhost:3001"
-const forecastService string = "http://localhost:3002"
-
 func Init(router *fiber.App) {
 	publicGroup := router.Group("/api/auth")
 	publicGroup.Post("/login", func(c *fiber.Ctx) error {
 		body := c.Body()
 
-		response, err := http.Post(authService+"/login", "application/json", bytes.NewBuffer(body))
+		response, err := http.Post(config.AuthService+"/login", "application/json", bytes.NewBuffer(body))
 		if err != nil {
 			return c.Status(500).SendString(err.Error())
+		}
+
+		if response.StatusCode != 200 {
+			return c.Status(response.StatusCode).SendString("Invalid credentials")
 		}
 
 		var authResponse models.AuthResponse
@@ -45,7 +46,7 @@ func Init(router *fiber.App) {
 	publicGroup.Post("/register", func(c *fiber.Ctx) error {
 		body := c.Body()
 
-		response, err := http.Post(authService+"/register", "application/json", bytes.NewBuffer(body))
+		response, err := http.Post(config.AuthService+"/register", "application/json", bytes.NewBuffer(body))
 		if err != nil {
 			return c.Status(500).SendString(err.Error())
 		}
@@ -66,10 +67,14 @@ func Init(router *fiber.App) {
 	authGroup.Get("/now", func(c *fiber.Ctx) error {
 		body := c.Body()
 
-		response, err := http.Post(forecastService+"/now", "application/json", bytes.NewBuffer(body))
+		response, err := http.Post(config.ForecastService+"/now", "application/json", bytes.NewBuffer(body))
 		if err != nil {
 			fmt.Println(err)
 			return c.Status(500).SendString(err.Error())
+		}
+
+		if response.StatusCode != 200 {
+			return c.Status(response.StatusCode).SendString("Something went wrong")
 		}
 
 		var forecastResponse models.ForecastResponse
@@ -89,10 +94,14 @@ func Init(router *fiber.App) {
 	authGroup.Get("/history", func(c *fiber.Ctx) error {
 		var body []byte
 
-		response, err := http.Get(forecastService + "/history")
+		response, err := http.Get(config.ForecastService + "/history")
 		if err != nil {
 			fmt.Println(err)
 			return c.Status(500).SendString(err.Error())
+		}
+
+		if response.StatusCode != 200 {
+			return c.Status(response.StatusCode).SendString("Something went wrong")
 		}
 
 		var forecastResponse []models.ForecastHistoryResponse

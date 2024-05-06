@@ -4,7 +4,6 @@ import (
 	config "auth-service/config"
 	database "auth-service/database"
 	models "auth-service/models"
-	"fmt"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -32,9 +31,8 @@ func Register(c *fiber.Ctx) error {
 			"message": "Internal server error",
 		})
 	}
-	fmt.Println(user)
-	fmt.Println(len(user.Email) > 0)
-	if len(user.Email) > 0 {
+
+	if user.Id != 0 {
 		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
 			"message": "User already exists",
 		})
@@ -74,7 +72,7 @@ func Login(c *fiber.Ctx) error {
 		})
 	}
 
-	if user.Email == "" {
+	if user.Id == 0 {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": "User not found",
 		})

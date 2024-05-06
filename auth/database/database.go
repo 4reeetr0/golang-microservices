@@ -19,6 +19,7 @@ func Connect() {
 
 func GetUser(email string) (models.User, error) {
 	var user models.User
+
 	err := DB.QueryRow("SELECT * FROM users WHERE email = ?", email).Scan(&user.Id, &user.Username, &user.Email, &user.Password)
 	if err != nil {
 		if err == sql.ErrNoRows {
